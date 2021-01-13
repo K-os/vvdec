@@ -13,9 +13,15 @@ jobs:
 
     steps:
     - uses: actions/checkout@v2
-      
+
+    - name: cache test-bitstreams
+      uses: actions/cache@v2
+      with:
+        path: ext/bitstreams
+        key: bitstream-cache-key-0
+
     - name: build
       run: make enable-bitstream-download=1 enable-bitstream-download=1 all
-      
+
     - name: test
       run: make test
