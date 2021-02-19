@@ -64,18 +64,25 @@ jobs:
           - os: windows-2019
 
     steps:
+    - name: get-tag-name
+      id: tag_name
+      uses: actions/github-script@v3
+      with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: return context.payload.ref.replace(/\/refs\/tags\//, '');
+
     - name: Download Artifacts
       uses: actions/download-artifact@v2
       with:
         name: vvdec-${{ matrix.os }}
-        path: vvdec-${{ github.ref }}-${{ matrix.os }}/
+        path: vvdec-${{ steps.tag_name.outputs.result }}-${{ matrix.os }}
 
     - name: Create Tarball
-      run: tar -cvzf vvdec-${{ github.ref }}-${{ matrix.os }}.tar.gz  vvdec-${{ github.ref }}-${{ matrix.os }}
+      run: tar -cvzf vvdec-${{ steps.tag_name.outputs.result }}-${{ matrix.os }}.tar.gz  vvdec-${{ steps.tag_name.outputs.result }}-${{ matrix.os }}
       if: matrix.os != 'windows-2019'
 
     - name: Create ZIP-Archive
-      run: zip -r vvdec-${{ github.ref }}-${{ matrix.os }}.zip vvdec-${{ github.ref }}-${{ matrix.os }}
+      run: zip -r vvdec-${{ steps.tag_name.outputs.result }}-${{ matrix.os }}.zip vvdec-${{ steps.tag_name.outputs.result }}-${{ matrix.os }}
       shell: cmd
       if: matrix.os == 'windows-2019'
 
@@ -97,6 +104,6 @@ jobs:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       with:
         upload_url: ${{ steps.create_release.outputs.upload_url }} # This pulls from the CREATE RELEASE step above, referencing it's ID to get its outputs object, which include a `upload_url`. See this blog post for more info: https://jasonet.co/posts/new-features-of-github-actions/#passing-data-to-future-steps
-        asset_path: vvdec-${{ github.ref }}-${{ matrix.os }}.*
-        asset_name: vvdec-${{ github.ref }}-${{ matrix.os }}
+        asset_path: vvdec-${{ steps.tag_name.outputs.result }}-${{ matrix.os }}.*
+        asset_name: vvdec-${{ steps.tag_name.outputs.result }}-${{ matrix.os }}
         asset_content_type: application/zip
