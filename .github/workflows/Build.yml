@@ -21,14 +21,15 @@ jobs:
     steps:
     - uses: actions/checkout@v2
 
-    - run: git fetch --prune --unshallow
+    #- run: git fetch --prune --unshallow
 
     - name: Build Linux / mac
       run: |
         mkdir build
         cd build
         cmake .. -DCMAKE_BUILD_TYPE=Release
-        make -j$(nproc)
+        cmake --build . --target all
+        cmake --build . --target install
       if: matrix.os != 'windows-2019'
 
     - name: Build Windows
@@ -37,6 +38,13 @@ jobs:
         cd build
         call "C:\Program Files (x86)\Microsoft Visual Studio\2019\Enterprise\VC\Auxiliary\Build\vcvars64.bat"
         cmake .. -DCMAKE_BUILD_TYPE=Release
-        msbuild vvdec.sln
+        cmake --build . --target all
+        cmake --build . --target install
       shell: cmd
       if: matrix.os == 'windows-2019'
+
+    - name: Upload Artifacts
+      uses: actions/upload-artifact@v2
+      with:
+        name: release-package
+        path: install
