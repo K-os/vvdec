@@ -49,9 +49,39 @@ jobs:
         name: vvdec-${{ matrix.os }}
         path: install
 
+
   create_release:
     if: contains(github.ref, 'refs/tags/')
     needs: build
+    runs-on: ubuntu-20.04
+
+    outputs:
+      upload_url: ${{ steps.create_release.outputs.upload_url }}
+      base_name: vvdec-${{ steps.tag_name.outputs.result }}
+
+    steps:
+    - name: Create Release
+      id: create_release
+      uses: actions/create-release@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        tag_name: ${{ github.ref }}
+        release_name: Release ${{ github.ref }}
+        draft: false
+        prerelease: false
+
+    - name: get-tag-name
+      id: tag_name
+      uses: actions/github-script@v3
+      with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: return context.payload.ref.replace(/\/refs\/tags\//, '');
+
+
+  upload_release_assets:
+    if: contains(github.ref, 'refs/tags/')
+    needs: create_release
 
     runs-on: ${{ matrix.os }}
     strategy:
@@ -64,38 +94,21 @@ jobs:
           - os: windows-2019
 
     steps:
-    - name: get-tag-name
-      id: tag_name
-      uses: actions/github-script@v3
-      with:
-          github-token: ${{ secrets.GITHUB_TOKEN }}
-          script: return context.payload.ref.replace(/\/refs\/tags\//, '');
-
     - name: Download Artifacts
       uses: actions/download-artifact@v2
       with:
         name: vvdec-${{ matrix.os }}
-        path: vvdec-${{ steps.tag_name.outputs.result }}-${{ matrix.os }}
+        path: -${{ matrix.os }}
 
     - name: Create Tarball
-      run: tar -cvzf vvdec-${{ steps.tag_name.outputs.result }}-${{ matrix.os }}.tar.gz  vvdec-${{ steps.tag_name.outputs.result }}-${{ matrix.os }}
+      run: tar -cvzf ${{ needs.create_release.outputs.base_name }}-${{ matrix.os }}.tar.gz ${{ needs.create_release.outputs.base_name }}-${{ matrix.os }}
       if: matrix.os != 'windows-2019'
 
     - name: Create ZIP-Archive
-      run: zip -r vvdec-${{ steps.tag_name.outputs.result }}-${{ matrix.os }}.zip vvdec-${{ steps.tag_name.outputs.result }}-${{ matrix.os }}
+      run: zip -r ${{ needs.create_release.outputs.base_name }}-${{ matrix.os }}.zip ${{ needs.create_release.outputs.base_name }}-${{ matrix.os }}
       shell: cmd
       if: matrix.os == 'windows-2019'
 
-    - name: Create Release
-      id: create_release
-      uses: actions/create-release@v1
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      with:
-        tag_name: ${{ github.ref }}
-        release_name: Release ${{ github.ref }}
-        draft: false
-        prerelease: false
 
     - name: Upload Release Asset
       id: upload-release-asset
@@ -103,7 +116,7 @@ jobs:
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       with:
-        upload_url: ${{ steps.create_release.outputs.upload_url }} # This pulls from the CREATE RELEASE step above, referencing it's ID to get its outputs object, which include a `upload_url`. See this blog post for more info: https://jasonet.co/posts/new-features-of-github-actions/#passing-data-to-future-steps
-        asset_path: vvdec-${{ steps.tag_name.outputs.result }}-${{ matrix.os }}.*
-        asset_name: vvdec-${{ steps.tag_name.outputs.result }}-${{ matrix.os }}
+        upload_url: ${{ needs.create_release.outputs.upload_url }} # This pulls from the CREATE RELEASE step above, referencing it's ID to get its outputs object, which include a `upload_url`. See this blog post for more info: https://jasonet.co/posts/new-features-of-github-actions/#passing-data-to-future-steps
+        asset_path: ${{ needs.create_release.outputs.base_name }}-${{ matrix.os }}.*
+        asset_name: ${{ needs.create_release.outputs.base_name }}-${{ matrix.os }}
         asset_content_type: application/zip
