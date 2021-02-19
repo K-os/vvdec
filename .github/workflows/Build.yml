@@ -52,9 +52,7 @@ jobs:
 
   create_release:
     if: contains(github.ref, 'refs/tags/')
-    needs: build
     runs-on: ubuntu-20.04
-
     outputs:
       upload_url: ${{ steps.create_release.outputs.upload_url }}
       base_name: vvdec-${{ steps.tag_name.outputs.result }}
@@ -76,12 +74,12 @@ jobs:
       uses: actions/github-script@v3
       with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
-          script: return context.payload.ref.replace(/\/refs\/tags\//, '');
+          script: return context.payload.ref.replace('refs/tags/', '');
 
 
   upload_release_assets:
     if: contains(github.ref, 'refs/tags/')
-    needs: create_release
+    needs: [build, create_release]
 
     runs-on: ${{ matrix.os }}
     strategy:
