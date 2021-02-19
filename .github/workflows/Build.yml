@@ -28,7 +28,7 @@ jobs:
         mkdir build
         cd build
         cmake .. -DCMAKE_BUILD_TYPE=Release
-        cmake --build . --target all
+        cmake --build . --target all -j$(nproc)
         cmake --build . --target install
       if: matrix.os != 'windows-2019'
 
@@ -38,7 +38,7 @@ jobs:
         cd build
         call "C:\Program Files (x86)\Microsoft Visual Studio\2019\Enterprise\VC\Auxiliary\Build\vcvars64.bat"
         cmake .. -DCMAKE_BUILD_TYPE=Release
-        cmake --build . --target all
+        cmake --build . --target all -j$(nproc)
         cmake --build . --target install
       shell: cmd
       if: matrix.os == 'windows-2019'
