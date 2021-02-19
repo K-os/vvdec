@@ -55,7 +55,7 @@ jobs:
     runs-on: ubuntu-20.04
     outputs:
       upload_url: ${{ steps.create_release.outputs.upload_url }}
-      base_name: vvdec-${{ steps.tag_name.outputs.result }}
+      base_name:  ${{ steps.release_base_name.outputs.result }}
 
     steps:
     - name: Create Release
@@ -69,12 +69,12 @@ jobs:
         draft: false
         prerelease: false
 
-    - name: get-tag-name
-      id: tag_name
+    - name: get-release-name
+      id: release_base_name
       uses: actions/github-script@v3
       with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
-          script: return context.payload.ref.replace('refs/tags/', '');
+          script: return "vvdec-" + context.payload.ref.replace('refs/tags/', '');
 
 
   upload_release_assets:
@@ -96,7 +96,7 @@ jobs:
       uses: actions/download-artifact@v2
       with:
         name: vvdec-${{ matrix.os }}
-        path: -${{ matrix.os }}
+        path: ${{ needs.create_release.outputs.base_name }}-${{ matrix.os }}
 
     - name: Create Tarball
       run: tar -cvzf ${{ needs.create_release.outputs.base_name }}-${{ matrix.os }}.tar.gz ${{ needs.create_release.outputs.base_name }}-${{ matrix.os }}
