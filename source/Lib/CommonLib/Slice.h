@@ -1821,7 +1821,7 @@ public:
 #endif
   
   //int                     getMaxLog2TrDynamicRange(ChannelType channelType) const                         { return getSpsRangeExtension().getExtendedPrecisionProcessingFlag() ? std::max<int>(15, int(m_bitDepths.recon[channelType] + 6)) : 15; }
-  constexpr int           getMaxLog2TrDynamicRange(ChannelType channelType) const                         { return 15; }
+  static constexpr int    getMaxLog2TrDynamicRange(ChannelType channelType) const                         { return 15; }
 
   int                     getDifferentialLumaChromaBitDepth() const                                       { return int(m_bitDepths.recon[CHANNEL_TYPE_LUMA]) - int(m_bitDepths.recon[CHANNEL_TYPE_CHROMA]); }
   int                     getQpBDOffset(ChannelType type) const                                           { return m_qpBDOffset[type];                                           }
