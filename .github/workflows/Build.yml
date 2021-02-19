@@ -68,7 +68,16 @@ jobs:
       uses: actions/download-artifact@v2
       with:
         name: vvdec-${{ matrix.os }}
-        path: install
+        path: vvdec-${{ github.ref }}-${{ matrix.os }}/
+
+    - name: Create Tarball
+      run: tar -cvzf vvdec-${{ github.ref }}-${{ matrix.os }}.tar.gz  vvdec-${{ github.ref }}-${{ matrix.os }}
+      if: matrix.os != 'windows-2019'
+
+    - name: Create ZIP-Archive
+      run: zip -r vvdec-${{ github.ref }}-${{ matrix.os }}.zip vvdec-${{ github.ref }}-${{ matrix.os }}
+      shell: cmd
+      if: matrix.os == 'windows-2019'
 
     - name: Create Release
       id: create_release
@@ -88,6 +97,6 @@ jobs:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       with:
         upload_url: ${{ steps.create_release.outputs.upload_url }} # This pulls from the CREATE RELEASE step above, referencing it's ID to get its outputs object, which include a `upload_url`. See this blog post for more info: https://jasonet.co/posts/new-features-of-github-actions/#passing-data-to-future-steps
-        asset_path: install
+        asset_path: vvdec-${{ github.ref }}-${{ matrix.os }}.*
         asset_name: vvdec-${{ github.ref }}-${{ matrix.os }}
         asset_content_type: application/zip
