@@ -75,6 +75,7 @@ jobs:
       with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           script: return "vvdec-" + context.payload.ref.replace('refs/tags/', '');
+          result-encoding: string
 
 
   upload_release_assets:
