@@ -191,18 +191,17 @@ public:
 #if ENABLE_SIMD_OPT_ALF
 template<typename G>
 static bool check_one_deriveClassificationBlk( AdaptiveLoopFilter* ref, AdaptiveLoopFilter* opt, ptrdiff_t srcStride,
-                                               ptrdiff_t dstStride, unsigned int w, unsigned int h, G input_generator )
+                                               unsigned int w, unsigned int h, G input_generator )
 {
   CHECK( srcStride < w, "OrgStride must be greater than or equal to width" );
-  CHECK( dstStride < w, "BufStride must be greater than or equal to width" );
 
   std::ostringstream sstm;
-  sstm << "deriveClassificationBlk srcStride=" << srcStride << " dstStride=" << dstStride << " w=" << w << " h=" << h;
+  sstm << "deriveClassificationBlk srcStride=" << srcStride << " w=" << w << " h=" << h;
 
   DimensionGenerator rng;
 
-  const int x = rng.get( 0, 128, 8 );
-  const int y = rng.get( 0, 128, 8 );
+  const int  x = rng.get( 0, srcStride - w, 8 );
+  const int  y = rng.get( 0, 128, 8 );
   const Area blk{ x, y, w, h };
 
   // Padding to src memory so that filterBlk can safely index [-3,+3] rows.
@@ -210,8 +209,11 @@ static bool check_one_deriveClassificationBlk( AdaptiveLoopFilter* ref, Adaptive
   std::vector<Pel> src( ( y + h + 2 * pad ) * srcStride + x + 2 * pad );
   std::generate( src.begin(), src.end(), input_generator );
 
-  Size sz{ w, h };
-  CPelBuf areaBufSrc{ src.data() + pad * srcStride, srcStride, sz };
+  CHECK( x + w > srcStride, "source block end position exceeds buffer stride" );
+
+  Size    sz{ x + w, y + h };
+  CPelBuf areaBufSrc{ src.data() + pad + pad * srcStride , srcStride, sz };
+
 
   std::array<AlfClassifier, AdaptiveLoopFilter::m_CLASSIFICATION_ARR_SIZE> classifier_ref;
   std::array<AlfClassifier, AdaptiveLoopFilter::m_CLASSIFICATION_ARR_SIZE> classifier_opt;
@@ -381,10 +383,9 @@ static bool check_deriveClassificationBlk( AdaptiveLoopFilter* ref, AdaptiveLoop
   InputGenerator<TCoeff> g{ 10, /*is_signed=*/false };
   for( unsigned i = 0; i < num_cases; ++i )
   {
-    unsigned srcStride = rng.get( w, MAX_CU_SIZE );
-    unsigned dstStride = rng.get( w, MAX_CU_SIZE );
+    unsigned srcStride = rng.get( w + 16, MAX_CU_SIZE );  // +16 to prevent overreads in simd implemenation
 
-    if( !check_one_deriveClassificationBlk( ref, opt, srcStride, dstStride, w, h, g ) )
+    if( !check_one_deriveClassificationBlk( ref, opt, srcStride, w, h, g ) )
     {
       return false;
     }
@@ -406,7 +407,7 @@ static bool check_filterBlk( AdaptiveLoopFilter* ref, AdaptiveLoopFilter* opt, u
     InputGenerator<TCoeff> g{ bitDepth, /*is_signed=*/false };
     for( unsigned i = 0; i < num_cases; ++i )
     {
-      unsigned srcStride = rng.get( w, MAX_CU_SIZE );
+      unsigned srcStride = rng.get( w + 4, MAX_CU_SIZE );  // +4 to prevent overreads in simd implemenation
       unsigned dstStride = rng.get( w, MAX_CU_SIZE );
 
       if( !check_one_filterBlk<filtType>( ref, opt, srcStride, dstStride, w, h, bitDepth, g ) )
