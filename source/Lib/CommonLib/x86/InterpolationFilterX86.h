@@ -3357,7 +3357,7 @@ void InterpolationFilter::_initInterpolationFilterX86()
   m_filterVer[2][1][1] = simdFilter<vext, 2, true, true, true>;
 
   m_filterCopy[0][0]   = simdFilterCopy<vext, false, false>;
-#if _MSC_VER >= 1950 && _M_ARM64
+#if _MSC_VER >= 1950 && _MSC_FULL_VER < 195035726 && _M_ARM64
   // simdFilterCopy<vext, false, true>() disabled on ARM64 VS2026 due to buggy compiler producing incorrect code
 #else
   m_filterCopy[0][1]   = simdFilterCopy<vext, false, true>;

@@ -132,7 +132,7 @@ if( VVDEC_TARGET_ARCH STREQUAL "AARCH64" )
   endif()
 
 
-  if( MSVC AND MSVC_VERSION GREATER_EQUAL 1950 )
+  if( MSVC AND MSVC_VERSION GREATER_EQUAL 1950 AND CMAKE_CXX_COMPILER_VERSION VERSION_LESS "19.50.35726.0" )
     message(WARNING "This version (>= 19.50) of the Microsoft ARM compiler produces incorrect SIMD"
             " code. The functions observed to be problematic are disabled in the code, but if you"
             " experience further problems with incorrectly decoded bitstreams on ARM64, try using"
