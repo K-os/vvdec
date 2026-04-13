@@ -490,3 +490,4 @@ endif()
 
 # include installer
 include( cmake/modules/vvdecInstall.cmake )
+
