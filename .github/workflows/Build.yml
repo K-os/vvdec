@@ -24,23 +24,24 @@ jobs:
             os: windows-latest
             msvc_arch: x64
 
+          # v145 is not yet available on windows-11-arm:
           - toolset: v143
             os: windows-11-arm
             msvc_arch: arm64
             run_unit_test: true
 
           - toolset: v145
-            os: windows-2025-vs2026
+            os: windows-latest
             msvc_arch: x64
             run_unit_test: true
 
           - toolset: v145
-            os: windows-2025-vs2026
+            os: windows-latest
             msvc_arch: Win32
             run_unit_test: true
 
           - toolset: v145
-            os: windows-2025-vs2026
+            os: windows-latest
             msvc_arch: arm64
 
     steps:
