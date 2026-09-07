@@ -92,74 +92,55 @@ jobs:
             os: windows-latest
             generator: "MinGW Makefiles"
 
-
           - os: macos-latest
             osx_arch: x86_64
             run_unit_test: true
-
           - os: macos-latest
             osx_arch: arm64
             run_unit_test: true
 
-
           - os: ubuntu-22.04
             compiler: [gcc-11, g++-11]
-
           - os: ubuntu-22.04
             compiler: [gcc-12, g++-12]
-
           - os: ubuntu-24.04
             compiler: [gcc-13, g++-13]
-
-# disabled, because we also run it with ASAN
-#          - os: ubuntu-24.04
-#            compiler: [gcc-14, g++-14]
-#            run_unit_test: true
-
-          - name: "ubuntu-24.04 with ASAN"
-            os: ubuntu-24.04
+          - os: ubuntu-24.04
             compiler: [gcc-14, g++-14]
+          - os: ubuntu-26.04
+            compiler: [gcc-15, g++-15]
             run_unit_test: true
-            cxx_flags: "-fsanitize=address"
+#          - os: ubuntu-26.04
+#            compiler: [gcc-16, g++-16]
 
           - os: ubuntu-22.04
             compiler: [clang-13, clang++-13]
-
           - os: ubuntu-22.04
             compiler: [clang-14, clang++-14]
-
           - os: ubuntu-22.04
             compiler: [clang-15, clang++-15]
-
           - os: ubuntu-24.04
             compiler: [clang-16, clang++-16]
-
           - os: ubuntu-24.04
             compiler: [clang-16, clang++-16]
-
           - os: ubuntu-24.04
             compiler: [clang-17, clang++-17]
-
           - os: ubuntu-24.04
             compiler: [clang-18, clang++-18]
-
-#          - os: ubuntu-24.04
+#          - os: ubuntu-26.04
 #            compiler: [clang-19, clang++-19]
+          - os: ubuntu-26.04
+            compiler: [clang-20, clang++-20]
+          - os: ubuntu-26.04
+            compiler: [clang-21, clang++-21]
 
-# disabled, because we also run it with ASAN
-#          - os: ubuntu-24.04-arm
-#            compiler: [aarch64-linux-gnu-gcc, aarch64-linux-gnu-g++]
-#            install_packages: g++-aarch64-linux-gnu
-#            run_unit_test: true
-
-          - name: "ubuntu-24.04-arm with ASAN"
-            os: ubuntu-24.04-arm
+          - name: ubuntu-26.04-arm
+            os: ubuntu-26.04-arm
             compiler: [aarch64-linux-gnu-gcc, aarch64-linux-gnu-g++]
             install_packages: g++-aarch64-linux-gnu
-            cxx_flags: "-fsanitize=address"
             run_unit_test: true
 
-          - os: ubuntu-24.04
+          - os: ubuntu-26.04-arm
             compiler: [arm-linux-gnueabihf-gcc, arm-linux-gnueabihf-g++]
             install_packages: g++-arm-linux-gnueabihf
 
@@ -167,8 +148,6 @@ jobs:
       CMAKE_GENERATOR: "${{ matrix.generator || 'Ninja' }}"
       CC: ${{ matrix.compiler[0] }}
       CXX: ${{ matrix.compiler[1] }}
-      CFLAGS: ${{ matrix.cxx_flags }}
-      CXXFLAGS: ${{ matrix.cxx_flags }}
       CCACHE_DIR: ${{ github.workspace }}/.ccache
       CCACHE_MAXSIZE: 100M
     steps:
@@ -192,11 +171,11 @@ jobs:
 
       - name: Static build
         run: |
-          cmake -S . -B build/static -DCMAKE_BUILD_TYPE=Release -DBUILD_SHARED_LIBS=0 -DCMAKE_OSX_ARCHITECTURES="${{ matrix.osx_arch }}" -DVVDEC_ENABLE_BITSTREAM_DOWNLOAD=${{ matrix.run_unit_test }}
+          cmake -S . -B build/static -DCMAKE_BUILD_TYPE=Release -DBUILD_SHARED_LIBS=0 -DCMAKE_OSX_ARCHITECTURES="${{ matrix.osx_arch }}" -DVVDEC_TOPLEVEL_OUTPUT_DIRS=0 -DVVDEC_ENABLE_BITSTREAM_DOWNLOAD=${{ matrix.run_unit_test }}
           cmake --build build/static
       - name: Shared build
         run: |
-          cmake -S . -B build/shared -DCMAKE_BUILD_TYPE=Release -DBUILD_SHARED_LIBS=1 -DCMAKE_OSX_ARCHITECTURES="${{ matrix.osx_arch }}"
+          cmake -S . -B build/shared -DCMAKE_BUILD_TYPE=Release -DBUILD_SHARED_LIBS=1 -DCMAKE_OSX_ARCHITECTURES="${{ matrix.osx_arch }}" -DVVDEC_TOPLEVEL_OUTPUT_DIRS=0
           cmake --build build/shared
 
       - name: Run Unit Tests
@@ -204,9 +183,16 @@ jobs:
         run: |
           ctest --test-dir build/static --output-on-failure -R unit_test
       - name: Run Decoding Tests
-        if: ${{ matrix.run_unit_test && !contains(matrix.cxx_flags,  '-fsanitize=address') }}
+        if: ${{ matrix.run_unit_test }}
         run: |
           ctest --test-dir build/static --output-on-failure -E unit_test
+
+      - name: Build and run ASAN unit tests
+        if: ${{ matrix.run_unit_test }}
+        run: |
+          cmake -S . -B build/asan -DCMAKE_BUILD_TYPE=Release -DBUILD_SHARED_LIBS=0 -DCMAKE_OSX_ARCHITECTURES="${{ matrix.osx_arch }}" -DVVDEC_TOPLEVEL_OUTPUT_DIRS=0 -DCMAKE_CXX_FLAGS="-fsanitize=address"
+          cmake --build build/asan
+          ctest --test-dir build/asan --output-on-failure -R unit_test
 
       - uses: actions/cache/save@v6
         with:
