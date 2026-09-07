@@ -52,7 +52,7 @@ jobs:
         if: ${{ matrix.run_tests }}
         with:
           path: ext/bitstreams
-          key: bitstreams-${{ matrix.name || matrix.os }}-${{ hashFiles('cmake/modules/define_bitstream_files.cmake') }}
+          key: bitstreams-${{ hashFiles('cmake/modules/define_bitstream_files.cmake') }}
 
       - name: Static build
         run: |
@@ -80,7 +80,7 @@ jobs:
         if: ${{ matrix.run_tests }}
         with:
           path: ext/bitstreams
-          key: bitstreams-${{ matrix.name || matrix.os }}-${{ hashFiles('cmake/modules/define_bitstream_files.cmake') }}
+          key: bitstreams-${{ hashFiles('cmake/modules/define_bitstream_files.cmake') }}
 
   build_unix:
     name: "${{ matrix.name || matrix.os }}: ${{ matrix.compiler[1] || matrix.osx_arch }} ${{ matrix.run_tests && '+Test' }}"
@@ -168,7 +168,7 @@ jobs:
         if: ${{ matrix.run_tests }}
         with:
           path: ext/bitstreams
-          key: bitstreams-${{ matrix.name || matrix.os }}-${{ hashFiles('cmake/modules/define_bitstream_files.cmake') }}
+          key: bitstreams-${{ hashFiles('cmake/modules/define_bitstream_files.cmake') }}
 
       - name: Static build
         run: |
@@ -203,4 +203,4 @@ jobs:
         if: ${{ matrix.run_tests }}
         with:
           path: ext/bitstreams
-          key: bitstreams-${{ matrix.name || matrix.os }}-${{ hashFiles('cmake/modules/define_bitstream_files.cmake') }}
+          key: bitstreams-${{ hashFiles('cmake/modules/define_bitstream_files.cmake') }}
