@@ -10,7 +10,7 @@ on:
 
 jobs:
   build_msvc:
-    name: "Windows MSVC: ${{ matrix.toolset }} ${{ matrix.msvc_arch }} ${{ matrix.run_unit_test && '+Test' }}"
+    name: "Windows MSVC: ${{ matrix.toolset }} ${{ matrix.msvc_arch }} ${{ matrix.run_tests && '+Test' }}"
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
@@ -28,17 +28,17 @@ jobs:
           - toolset: v143
             os: windows-11-arm
             msvc_arch: arm64
-            run_unit_test: true
+            run_tests: true
 
           - toolset: v145
             os: windows-latest
             msvc_arch: x64
-            run_unit_test: true
+            run_tests: true
 
           - toolset: v145
             os: windows-latest
             msvc_arch: Win32
-            run_unit_test: true
+            run_tests: true
 
           - toolset: v145
             os: windows-latest
@@ -49,7 +49,7 @@ jobs:
 #      - run: git fetch --prune --unshallow # is this really needed?
 
       - uses: actions/cache/restore@v6
-        if: ${{ matrix.run_unit_test }}
+        if: ${{ matrix.run_tests }}
         with:
           path: ext/bitstreams
           key: bitstreams-${{ matrix.name || matrix.os }}-${{ hashFiles('cmake/modules/define_bitstream_files.cmake') }}
@@ -58,7 +58,7 @@ jobs:
         run: |
           $ErrorActionPreference = 'stop'
           $PSNativeCommandUseErrorActionPreference = $true
-          cmake -S . -B build/static  -DCMAKE_BUILD_TYPE=Release -DBUILD_SHARED_LIBS=0 -A "${{ matrix.msvc_arch }}" -T "${{ matrix.toolset }}" -DVVDEC_ENABLE_BITSTREAM_DOWNLOAD=${{ matrix.run_unit_test }}
+          cmake -S . -B build/static  -DCMAKE_BUILD_TYPE=Release -DBUILD_SHARED_LIBS=0 -A "${{ matrix.msvc_arch }}" -T "${{ matrix.toolset }}" -DVVDEC_ENABLE_BITSTREAM_DOWNLOAD=${{ matrix.run_tests }}
           cmake --build build/static --config Release
       - name: Shared build
         run: |
@@ -68,22 +68,22 @@ jobs:
           cmake --build build/shared --config Release
 
       - name: Run Unit Tests
-        if: ${{ matrix.run_unit_test }}
+        if: ${{ matrix.run_tests }}
         run: |
           ctest --test-dir build/static --build-config Release --output-on-failure -R unit_test
       - name: Run Decoding Tests
-        if: ${{ matrix.run_unit_test }}
+        if: ${{ matrix.run_tests }}
         run: |
           ctest --test-dir build/static --build-config Release --output-on-failure -E unit_test
 
       - uses: actions/cache/save@v6
-        if: ${{ matrix.run_unit_test }}
+        if: ${{ matrix.run_tests }}
         with:
           path: ext/bitstreams
           key: bitstreams-${{ matrix.name || matrix.os }}-${{ hashFiles('cmake/modules/define_bitstream_files.cmake') }}
 
   build_unix:
-    name: "${{ matrix.name || matrix.os }}: ${{ matrix.compiler[1] || matrix.osx_arch }} ${{ matrix.run_unit_test && '+Test' }}"
+    name: "${{ matrix.name || matrix.os }}: ${{ matrix.compiler[1] || matrix.osx_arch }} ${{ matrix.run_tests && '+Test' }}"
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
@@ -95,10 +95,10 @@ jobs:
 
           - os: macos-latest
             osx_arch: x86_64
-            run_unit_test: true
+            run_tests: true
           - os: macos-latest
             osx_arch: arm64
-            run_unit_test: true
+            run_tests: true
 
           - os: ubuntu-22.04
             compiler: [gcc-11, g++-11]
@@ -110,7 +110,7 @@ jobs:
             compiler: [gcc-14, g++-14]
           - os: ubuntu-26.04
             compiler: [gcc-15, g++-15]
-            run_unit_test: true
+            run_tests: true
 #          - os: ubuntu-26.04
 #            compiler: [gcc-16, g++-16]
 
@@ -139,7 +139,7 @@ jobs:
             os: ubuntu-26.04-arm
             compiler: [aarch64-linux-gnu-gcc, aarch64-linux-gnu-g++]
             install_packages: g++-aarch64-linux-gnu
-            run_unit_test: true
+            run_tests: true
 
           - os: ubuntu-26.04-arm
             compiler: [arm-linux-gnueabihf-gcc, arm-linux-gnueabihf-g++]
@@ -165,14 +165,14 @@ jobs:
           path: .ccache
           key: ccache-${{ matrix.name || matrix.os }}-${{ matrix.compiler[1] || matrix.osx_arch }}
       - uses: actions/cache/restore@v6
-        if: ${{ matrix.run_unit_test }}
+        if: ${{ matrix.run_tests }}
         with:
           path: ext/bitstreams
           key: bitstreams-${{ matrix.name || matrix.os }}-${{ hashFiles('cmake/modules/define_bitstream_files.cmake') }}
 
       - name: Static build
         run: |
-          cmake -S . -B build/static -DCMAKE_BUILD_TYPE=Release -DBUILD_SHARED_LIBS=0 -DCMAKE_OSX_ARCHITECTURES="${{ matrix.osx_arch }}" -DVVDEC_TOPLEVEL_OUTPUT_DIRS=0 -DVVDEC_ENABLE_BITSTREAM_DOWNLOAD=${{ matrix.run_unit_test }}
+          cmake -S . -B build/static -DCMAKE_BUILD_TYPE=Release -DBUILD_SHARED_LIBS=0 -DCMAKE_OSX_ARCHITECTURES="${{ matrix.osx_arch }}" -DVVDEC_TOPLEVEL_OUTPUT_DIRS=0 -DVVDEC_ENABLE_BITSTREAM_DOWNLOAD=${{ matrix.run_tests }}
           cmake --build build/static
       - name: Shared build
         run: |
@@ -180,16 +180,16 @@ jobs:
           cmake --build build/shared
 
       - name: Run Unit Tests
-        if: ${{ matrix.run_unit_test }}
+        if: ${{ matrix.run_tests }}
         run: |
           ctest --test-dir build/static --output-on-failure -R unit_test
       - name: Run Decoding Tests
-        if: ${{ matrix.run_unit_test }}
+        if: ${{ matrix.run_tests }}
         run: |
           ctest --test-dir build/static --output-on-failure -E unit_test
 
       - name: Build and run ASAN unit tests
-        if: ${{ matrix.run_unit_test }}
+        if: ${{ matrix.run_tests }}
         run: |
           cmake -S . -B build/asan -DCMAKE_BUILD_TYPE=Release -DBUILD_SHARED_LIBS=0 -DCMAKE_OSX_ARCHITECTURES="${{ matrix.osx_arch }}" -DVVDEC_TOPLEVEL_OUTPUT_DIRS=0 -DCMAKE_CXX_FLAGS="-fsanitize=address"
           cmake --build build/asan
@@ -200,7 +200,7 @@ jobs:
           path: .ccache
           key: ccache-${{ matrix.name || matrix.os }}-${{ matrix.compiler[1] || matrix.osx_arch }}
       - uses: actions/cache/save@v6
-        if: ${{ matrix.run_unit_test }}
+        if: ${{ matrix.run_tests }}
         with:
           path: ext/bitstreams
           key: bitstreams-${{ matrix.name || matrix.os }}-${{ hashFiles('cmake/modules/define_bitstream_files.cmake') }}
